@@ -63,6 +63,17 @@ function renderCircles(circlesGroup, newXScale, chosenXAxis) {
   return circlesGroup;
 }
 
+
+// labels for ciciles
+function renderLabels(circleLabels, newXScale, chosenXAxis) {
+    // alert("render labels")
+    circleLabels.transition()
+      .duration(1000)
+      .attr("x", d => newXScale(d[chosenXAxis]));
+  
+    return circleLabels;
+  }
+
 // function used for updating circles group with new tooltip
 function updateToolTip(chosenXAxis, circlesGroup) {
 
@@ -84,7 +95,7 @@ function updateToolTip(chosenXAxis, circlesGroup) {
   circlesGroup.call(toolTip);
 
   circlesGroup.on("mouseover", function(data) {
-    toolTip.show(data);
+    toolTip.show(data, this);
   })
     // onmouseout event
     .on("mouseout", function(data, index) {
@@ -101,7 +112,7 @@ d3.csv("./assets/data/data.csv").then(function (healthData) {
   healthData.forEach(function(data) {
     data.poverty = +data.poverty;
     data.healthcare = +data.healthcare;
-    data.ageMoe = +data.ageMoe;
+    data.age = +data.age;
   });
 
   // xLinearScale function above csv import
@@ -139,10 +150,8 @@ d3.csv("./assets/data/data.csv").then(function (healthData) {
     //////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////
     // //Add State labels to circles
-    // var circleLabels = chartGroup.selectAll(null).data(healthData).enter().append("text");
-
-    // circleLabels
-    //   .attr("x", function(d) {
+    // circlesGroup.data(healthData).enter().append("text")
+    // .attr("x", function(d) {
     //     return xLinearScale(d[chosenXAxis]);
     //   })
     //   .attr("y", function(d) {
@@ -152,6 +161,22 @@ d3.csv("./assets/data/data.csv").then(function (healthData) {
     //     return d.abbr;
     //   })
     //   .attr("class", "stateText");
+   
+    //funcitioning circle lablels
+    var circleLabels = chartGroup.selectAll('#stateText').data(healthData).enter().append("text");
+    // var circleLabels = chartGroup.selectAll(null).data(healthData).enter().append("text");
+    
+    circleLabels
+      .attr("x", function(d) {
+        return xLinearScale(d[chosenXAxis]);
+      })
+      .attr("y", function(d) {
+        return yLinearScale(d.healthcare);
+      })
+      .text(function(d) {
+        return d.abbr;
+      })
+      .attr("class", "stateText");
     
      
 
@@ -169,7 +194,7 @@ d3.csv("./assets/data/data.csv").then(function (healthData) {
   var ageLabel = labelsGroup.append("text")
     .attr("x", 0)
     .attr("y", 40)
-    .attr("value", "ageMoe") // value to grab for event listener
+    .attr("value", "age") // value to grab for event listener
     .classed("inactive", true)
     .text("Age(Median)");
 
@@ -188,6 +213,7 @@ d3.csv("./assets/data/data.csv").then(function (healthData) {
   // x axis labels event listener
   labelsGroup.selectAll("text")
     .on("click", function() {
+        console.log("here");
       // get value of selection
       var value = d3.select(this).attr("value");
       if (value !== chosenXAxis) {
@@ -203,15 +229,19 @@ d3.csv("./assets/data/data.csv").then(function (healthData) {
 
         // updates x axis with transition
         xAxis = renderAxes(xLinearScale, xAxis);
-
+        console.log("before render circles")
         // updates circles with new x values
         circlesGroup = renderCircles(circlesGroup, xLinearScale, chosenXAxis);
 
         // updates tooltips with new info
         circlesGroup = updateToolTip(chosenXAxis, circlesGroup);
 
+        //update circles labels with new info
+        console.log("about to move circles")
+        circleLabels = renderLabels(circleLabels, xLinearScale, chosenXAxis);
+        console.log("after move ciricles")
         // changes classes to change bold text
-        if (chosenXAxis === "ageMoe") {
+        if (chosenXAxis === "age") {
           ageLabel
             .classed("active", true)
             .classed("inactive", false);
